@@ -1,0 +1,561 @@
+---
+title: "**SONGS CLASSIFICATION FROM SPOTIFY DATASETS YEAR 2020**"
+author: ""
+date: ""
+output: 
+  html_document:
+    theme: bootstrap
+    css: styles.css
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(kableExtra)
+options(knitr.table.format = "html")
+```
+# {.tabset}
+
+
+## **INTRODUCTION**
+`r text_spec("**1. Background**", background = "#D05A6E", color = "white", bold = T)`<br> 
+Fill up here
+
+<br> <br> <br> <br> <br>
+`r text_spec("**2. Problem Statement**", background = "#D05A6E", color = "white", bold = T)`<br>
+Fill up here
+
+<br> <br> <br> <br> <br>
+`r text_spec("**3. Objectives**", background = "#D05A6E", color = "white", bold = T)`<br> 
+Fill up here
+
+<br> <br> <br> <br> <br>
+`r text_spec("**4. Details' Dataset**", background = "#D05A6E", color = "white", bold = T)`<br> 
+Fill up here
+
+<br> <br> <br> <br> <br>
+
+
+## **DATA PREPARATION** {.tabset}
+
+### **PACKAGES**
+<center>**This is a list of the packages we use for this project, along with their functions.**</center><br>
+
+`r text_spec("**Library used to clean the data**", background = "#D05A6E", color = "white", bold = T)`
+```{r message=FALSE, warning=FALSE}
+library(dplyr) #to data manipulation easier
+library(tidyr) #to simplify the process of creating tidy data
+library(janitor) #to examine and clean dirty data
+library(tidyverse) #an opinionated collection of R packages designed for data science
+library(tibble) #To display data along with data type while displaying
+library(grid) #To provide a set of functions and classes that represent graphical objects or grobs, that can be manipulated like any other R object
+library(ggplot2) #To data visualization
+library(knitr) #To enable integration of R code into LaTeX, LyX, HTML, Markdown, AsciiDoc, and reStructuredText documents
+library(kableExtra) #to help building common complex tables and manipulate table styles
+library(workflows) #a container object that aggregates information required to fit and predict from a model
+library(pacman) #management tool that combines the functionality of base library related functions into intuitively named functions
+library(GGally) #a plotting system based on the grammar of graphics
+library(tidymodels) #collection of packages for modeling and machine learning using tidyverse principles
+library(tune) #to facilitate hyperparameter tuning for the tidymodels packages
+library(kableExtra) #to help you build common complex tables and manipulate table styles
+options(knitr.table.format = "html")
+library(data.table) #an extension of data. frame package in R
+library(DT) #To provide an R interface to the JavaScript library DataTables
+library(metan) #a collection of functions that implement a workflow-based approach
+library(ranger) #a fast implementation of random forests
+library(xgboost) #Extreme Gradient Boosting
+library(visdat) #To provide visualisations of an entire dataframe at once
+```
+
+### **DESCRIPTION OF DATA**
+<center>**The dataset was obtained from Kaggle, and the link source can be found here:** <br>
+https://www.kaggle.com/datasets/pepepython/spotify-huge-database-daily-charts-over-3-years</center><br>
+
+
+`r text_spec("**1. Importing the dataset which is obtained from Github**", background = "#D05A6E", color = "white", bold = T)`
+```{r}
+url = "https://raw.githubusercontent.com/Kristian2828/PROGRAMMING_GP/main/DATASET/RAW%20DATASET/dataset.csv"
+df1 = read.csv(url)
+```
+
+`r text_spec("**2. Description of the dataset**", background = "#D05A6E", color = "white", bold = T)`
+```{r message=FALSE, warning=FALSE}
+#Dimension of the dataset
+yes_0 = str_trim(paste0(dim(df1), sep = "  ", collapse = ""))
+
+#Column names of the dataset
+vars_0 = str_trim(paste0(names(df1), sep = " | ", collapse = ""))
+
+#Creating a table
+table_attributes = data_frame(Data = 'Spotify_Dataset_BeforeCleaning',
+  `Rows  Columns` = yes_0,
+  Variables = vars_0)
+```
+
+<br><center>**The raw dataset's attributes and observations are identified below.**</center><br>
+```{r}
+#Printing the table
+kable(table_attributes, format = "html") %>%
+  kable_styling(bootstrap_options = "striped") %>%
+     column_spec(2, width = "12em")
+```
+
+### **CLEANING AND DATA MANIPULATION**
+`r text_spec("**1. Exploration of dataset**", background = "#D05A6E", color = "white", bold = T)`
+```{r results='hide'}
+# View the structure of the data
+glimpse(df1)
+```
+```{r include = FALSE}
+# View a summary of the data
+summary(df1)
+
+# View first 6 rows
+head(df1)
+
+# View last 6 rows
+tail(df1)
+```
+
+`r text_spec("**2. Cleaning the data**", background = "#D05A6E", color = "white", bold = T)`
+```{r results='hide'}
+# Format variable names
+df2 = clean_names(df1)
+View(df2)
+
+# Since these removing these observations are not expected to affect our approach, we remove these incomplete observations
+# Removing NA values
+df2 = na.omit(df2)
+
+# Removing irrelevant columns
+df2 = df2 %>% select(-c(uri,genre))
+df3 = df2[-c(27:148)]
+df3
+```
+
+`r text_spec("**3. Creating box plot of the audio features to find any extreme outliers**", background = "#D05A6E", color = "white", bold = T)`
+```{r}
+plot1 = boxplot(df3$loudness,
+  ylab = "loudness",
+  main = "Boxplot of loudness",
+  ylim = c(-30, 0))
+
+plot2 = boxplot(df3$danceability,
+  ylab = "dancebility",
+  main = "Boxplot of dancebility")
+ 
+plot3 = boxplot(df3$energy,
+  ylab = "energy",
+  main = "Boxplot of energy")
+
+plot4 = boxplot(df3$acoustics,
+  ylab = "acoustics",
+  main = "Boxplot of acoustics")
+
+plot5 = boxplot(df3$tempo,
+ ylab = "tempo",
+ main = "Boxplot of tempo")
+```
+
+`r text_spec("**4. Finishing touches**", background = "#D05A6E", color = "white", bold = T)`
+```{r}
+#dimension of the dataset
+yes = str_trim(paste0(dim(df3), sep = "  ", collapse = ""))
+
+#column names of the dataset
+vars = str_trim(paste0(names(df3), sep = " | ", collapse = ""))
+
+# Creating a table
+table_attributes = data_frame(Data = 'Spotify_Dataset_AfterCleaning',
+  `Rows  Columns` = yes,
+  Variables = vars)
+```
+
+<br><center>**The dataset's attributes and observations upon cleaning and manipulation are identified below.**</center><br>
+
+```{r}
+# Printing the table
+kable(table_attributes, format = "html") %>%
+  kable_styling(bootstrap_options = "striped") %>%
+     column_spec(2, width = "12em")
+```
+
+<br><center>**Exporting the dataset**</center><br>
+```{r}
+write.csv(df3, "data_cleaned.csv")
+```
+
+### **DATA OVERVIEW**
+<br><center>**Here is an overview at the dataset after cleaning and manipulation**</center><br>
+
+```{r, echo=FALSE}
+datatable(head(df3, 100))
+```
+
+## **DATA ANALYSIS** {.tabset}
+
+### **GENRE**
+`r text_spec("**1. Genres Spread**", background = "#D05A6E", color = "white", bold = T)`
+```{r}
+df3 %>% group_by(genre_new) %>%
+  summarise(No_of_tracks = n()) %>% knitr::kable()
+```
+<br>
+```{r warning=FALSE, message=FALSE}
+#plot variable  distributions 
+vis_dat(df3)
+```
+
+### **POPULAR SONGS**
+Fill up here
+
+## **MACHINE LEARNING** {.tabset}
+
+### **CLASSIFICATION**
+
+```{r, echo=FALSE}
+if (!require("pacman")) install.packages("pacman")
+```
+
+`r text_spec("**1. Data Balancing Activity**", background = "#D05A6E", color = "white", bold = T)`
+```{r results='hide'}
+#Sort factors of the type in ascending order
+df3[order(df3$genre_new),]
+
+#Reorder type factors by frequency
+df3$genre_new <- fct_infreq(df3$genre_new)
+
+#Now reverse order (so it appears as decreasing the plot)
+df3$genre_new <- fct_rev(df3$genre_new)
+```
+
+`r text_spec("**2. Plot overview**", background = "#D05A6E", color = "white", bold = T)`
+```{r}
+# music genres counts and percentages
+plot = ggplot(data = df3, aes(y=genre_new)) +
+  geom_bar(aes(fill=genre_new)) +
+  theme (plot.title = element_text(hjust = 0.5)) +
+  expand_limits(x = 8500) +
+  labs(title = "Music genres - Number of Cases and Percentages",
+                 y = "Genres",
+                 x = "Count") +
+  geom_text(stat='count', 
+            aes(label = sprintf('%s (%.1f%%)', 
+                after_stat(count), 
+                after_stat(count / sum(count) * 100))),
+            hjust=ifelse(1.5, -0.1, 1.1))
+
+plot
+```
+
+`r text_spec("**3. Running the Shannon diversity index to see how the data balance is**", background = "#D05A6E", color = "white", bold = T)`
+```{r}
+#balance evaluation by computing the normalized Shannon diversity index
+balance = df3%>% 
+  group_by(genre_new) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(check = - (n / sum(n) * log(n / sum(n))) / log(length(genre_new)) ) %>% 
+  summarise(balance = sum(check)) %>% 
+  pull()
+
+balance
+```
+`r text_spec("**4. Assessing the Feature using Logistic Regression**", background = "#D05A6E", color = "white", bold = T)`
+```{r warning=FALSE}
+# compute logistic regression with glm function
+genremodel <- glm(genre_new ~ acoustics + danceability + energy + instrumentalness + liveliness + speechiness + tempo + valence +
+                 key + mode + duration_ms, 
+               data = df3, family = binomial)
+
+# see model output
+summary(genremodel)
+```
+```{r warning=FALSE}
+# compute logistic regression with glm function
+correlation <- corr_coef(df3[,12:26])
+
+# see model output
+plot(correlation)
+```
+
+`r text_spec("**5. Classification model: Implementation and Validation**", background = "#D05A6E", color = "white", bold = T)`
+
+<br>**a. Feature Selection**<br>
+```{r}
+#Subset with selected audio feature predictors 
+df4 <- subset(df3, select=c(
+                            "acoustics", "danceability","energy",
+                             "speechiness","valence","genre_new"))
+
+#Check the subset
+names(df4)
+```
+
+```{r}
+str(df4)
+```
+```{r}
+summary(df4)
+```
+<br>**b. Data Splitting**<br>
+```{r}
+#randomize data
+set.seed(123)
+
+#split the data into training (80%) and testing (20%)
+df4_split = initial_split(df4, prop = 0.80, strata = genre_new)
+df4_split # proportions of cases (train/test/total)
+```
+```{r}
+#training and testing sets extraction
+df4_train = training(df4_split)
+df4_test = testing(df4_split)
+
+#training and testing dataset inspection
+str(df4_train)
+```
+```{r}
+str(df4_test)
+```
+```{r}
+dim(df4_train)
+```
+```{r}
+dim(df4_test)
+```
+<br>**c. Data Preprocessing Recipe**<br>
+```{r}
+#Recipe for the model creation
+model_recipe <- recipe(genre_new ~ ., data = df4_train) %>% 
+  step_normalize(all_numeric())
+
+model_recipe
+```
+
+<br>**d. Model Specification**<br>
+```{r warning=FALSE}
+
+#Random Forest
+rf_model = 
+  rand_forest() %>% 
+  set_engine("ranger", importance = "impurity") %>% 
+  set_mode("classification")
+
+#K-Nearest Neighbor
+knn_model = 
+  nearest_neighbor(neighbors = 4) %>% # 
+  set_engine("kknn") %>% 
+  set_mode("classification") 
+
+#Boosted Trees
+boost_model = 
+  boost_tree() %>% 
+  set_engine("xgboost") %>% 
+  set_mode("classification") 
+```
+
+
+<br>**e. Workflows**<br>
+```{r}
+#workflow for Random Forest
+rf_wf = workflow() %>% 
+  add_model(rf_model) %>% 
+  add_recipe(model_recipe)
+
+#workflow for K-Nearest Neighbor
+knn_wf = workflow() %>% 
+  add_model(knn_model) %>% 
+  add_recipe(model_recipe)
+
+#workflow for Boosted  model
+boost_wf = workflow() %>% 
+  add_model(boost_model) %>% 
+  add_recipe(model_recipe)
+```
+
+
+<br>**f. Folding**<br>
+```{r }
+#split the train set into folds
+set.seed(123)
+folds <- vfold_cv(data = df4_train, v = 5, strata = "genre_new")
+```
+
+
+<br>**g. Tuning parameters and Model evaluation**<br>
+```{r warning=FALSE, message=FALSE}
+# tune Random Forest model 
+set.seed(123)
+rf_tune =
+  rf_wf %>% 
+  fit_resamples(
+    resamples = folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, 
+      accuracy, kap,
+      roc_auc, sens, spec),
+    control = control_resamples(save_pred = TRUE)
+    ) 
+
+# report evaluation metrics for the Random Forest model
+rf_tune %>%
+  collect_metrics()
+```
+
+```{r warning=FALSE, message=FALSE}
+#tuning the Boosted Trees model
+set.seed(123)
+boost_tune = boost_wf %>% 
+  fit_resamples(
+    resamples = folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, 
+      accuracy, kap,
+      roc_auc, sens, spec),
+    control = control_resamples(save_pred = TRUE)
+    ) 
+  
+# report evaluation metrics for the Boosted Trees model
+boost_tune %>%
+  collect_metrics()
+```
+
+```{r warning=FALSE, message=FALSE}
+#tuning K-Nearest Neighbor model 
+set.seed(123)
+knn_tune = 
+  knn_wf %>% 
+  fit_resamples(
+    resamples = folds, 
+    metrics = metric_set(
+      recall, precision, f_meas, 
+      accuracy, kap,
+      roc_auc, sens, spec),
+    control = control_resamples(save_pred = TRUE)
+    ) 
+  
+# report evaluation metrics for the K-Nearest Neighbor model 
+knn_tune %>%
+  collect_metrics()
+```
+
+
+<br>**h. Best performing model comparison**<br>
+```{r}
+# report highest precision score
+best_resamples = 
+  bind_rows(
+            show_best(rf_tune, metric = "precision", n = 1) %>% mutate(model = "Random Forest") %>% select(model, precision = mean),
+            show_best(knn_tune, metric = "precision", n = 1) %>% mutate(model = "K-NN") %>%            select(model, precision = mean), 
+            show_best(boost_tune, metric = "precision", n = 1) %>% mutate(model = "Boosted Trees") %>% select(model, precision = mean)
+  )
+
+report_1 = best_resamples %>% 
+  arrange(desc(precision)) %>% 
+  knitr::kable("simple")
+report_1
+```
+```{r}
+# report highest recall score
+best_resamples = 
+  bind_rows(
+            show_best(rf_tune, metric = "recall", n = 1) %>% mutate(model = "Random Forest") %>% select(model, recall = mean),
+            show_best(knn_tune, metric = "recall", n = 1) %>% mutate(model = "K-NN") %>% select(model, recall = mean), 
+            show_best(boost_tune, metric = "recall", n = 1) %>% mutate(model = "Boosted Trees") %>% select(model, recall = mean)
+  )
+
+report_2 = best_resamples %>% 
+  arrange(desc(recall)) %>% 
+  knitr::kable("simple")
+report_2
+```
+```{r}
+# report highest roc-auc score
+best_resamples = 
+  bind_rows(
+            show_best(rf_tune, metric = "roc_auc", n = 1) %>% mutate(model = "Random Forest") %>% select(model, roc_auc = mean),
+            show_best(knn_tune, metric = "roc_auc", n = 1) %>% mutate(model = "K-NN") %>% select(model, roc_auc = mean), 
+            show_best(boost_tune, metric = "roc_auc", n = 1) %>% mutate(model = "Boosted Trees") %>% select(model, roc_auc = mean)
+  )
+
+report_3 = best_resamples %>% 
+  arrange(desc(roc_auc)) %>% 
+  knitr::kable("simple")
+report_3
+```
+
+```{r}
+# report highest specificity score
+best_resamples = 
+  bind_rows(
+            show_best(rf_tune, metric = "spec", n = 1) %>% mutate(model = "Random Forest") %>% select(model, spec = mean),
+            show_best(knn_tune, metric = "spec", n = 1) %>% mutate(model = "K-NN") %>% select(model, spec = mean), 
+            show_best(boost_tune, metric = "spec", n = 1) %>% mutate(model = "Boosted Trees") %>% select(model, spec = mean)
+  )
+
+report_4 = best_resamples %>% 
+  arrange(desc(spec)) %>% 
+  knitr::kable("simple")
+report_4
+```
+
+
+<br>
+<br>**i. Predictor Test**<br>
+```{r,results='hide'}
+#Generate predictions from the test set
+test_predictions = rf_tune %>% collect_predictions()
+test_predictions
+```
+
+<br>**j. Final model fitting**<br>
+```{r warning=FALSE, message=FALSE}
+#fit the final model
+last_fit_rf = last_fit(rf_wf, 
+                        split = df4_split,
+                        metrics = metric_set(
+                          recall, precision, f_meas, 
+                          accuracy, kap,
+                          roc_auc, sens, spec)
+                        )
+
+#compute performance score for the final model
+last_fit_rf %>% 
+  collect_metrics()
+```
+
+```{r}
+#Confusion matrix with the test set
+last_fit_rf %>%
+  collect_predictions() %>% 
+  conf_mat(genre_new, .pred_class) %>% 
+  autoplot(type = "heatmap")
+```
+
+
+### **REGRESSION**
+Fill up here
+
+
+## **ASSESSMENT**
+Fill up here
+
+## **CONCLUSION**
+Fill up here
+
+## **REFERENCES**
+Fill up here
+
+## **AUTHORS**
+
+<center>**PREPARED BY**</center><br>
+```{r echo=FALSE}
+student = c("aa", "Kristian Surya Dinata", "cc", "dd", "ee")
+matric = c(11,"S2043845",33,44,55)
+people = data.frame(student,matric)
+knitr::kable(people, "simple", col.names = c("Name", "Matric No."), align = c("cc"))
+```
+
