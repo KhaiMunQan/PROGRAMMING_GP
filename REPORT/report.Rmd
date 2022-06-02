@@ -67,6 +67,12 @@ library(metan) #a collection of functions that implement a workflow-based approa
 library(ranger) #a fast implementation of random forests
 library(xgboost) #Extreme Gradient Boosting
 library(visdat) #To provide visualisations of an entire dataframe at once
+
+##NEWLY ADDED library
+library(magrittr)
+library(hexbin)
+library(cowplot)
+library(reshape2)
 ```
 
 ### **DESCRIPTION OF DATA**
@@ -208,8 +214,146 @@ df3 %>% group_by(genre_new) %>%
 vis_dat(df3)
 ```
 
+## ADDED BY KEVIN/MINJIE
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br><center>Statistics for each feature (predictor & target)</center><br>
+
+```{r, cache=TRUE}
+bees <- read.csv('./data_cleaned.csv', header=TRUE)
+summary(bees)
+
+#Determine numeric variables
+isnum <- names(bees[, sapply(bees, is.numeric)])
+isnum
+paste("Total numeric variables: ", length(isnum))
+```
+
+<h3>**Explanation**</h3>
+<ul>
+<li>After cleaning, There are total of 28 column variables, in which, 19 of them are numeric and continuous which can be analysed upon. </li>
+
+<br><center><h2>Enough of Numbers!! Lets see some graphs...</h2></center><br>
+<h3>Distribution of each numeric variable</h3>
+
+```{r ,figures-side-hist, fig.show="hold",out.width="50%",warning=FALSE, message=FALSE}
+hist(bees$key,main="Histogram for Key",xlab="Key",col='blue') 
+hist(bees$energy,main="Histogram for Energy",xlab="Energy",col='blue')
+hist(bees$danceability,main="Histogram for Danceability",xlab="Danceability",col='blue')
+hist(bees$loudness,main="Histogram for loudness",xlab="Loudness",col='blue')
+hist(bees$speechiness,main="Histogram for Speechiness",xlab="Speechiness",col='blue')
+hist(bees$liveliness,main="Histogram for Liveliness",xlab="Liveliness",col='blue')
+hist(bees$instrumentalness,main="Histogram for Instrumentalness",xlab="Instrumentaless",col='blue')
+hist(bees$acoustics,main="Histogram for acoustics",xlab="Acoustics",col='blue')
+hist(bees$valence,main="Histogram for valence(song mood)",xlab="Valence(song mood)",col='blue')
+hist(bees$popularity,main="Histogram for popularity",xlab="Popularity",col='blue')
+hist(bees$tempo,main="Histogram for tempo",xlab="Tempo",col='blue')
+hist(bees$duration_ms,main="Histogram for song_duration",xlab="Song_Duration",col='blue')
+```
+<h3>**Explanation**</h3>
+<p>Based on the distribution seen above, there are some notable highlights:
+<ul>
+<li>Most of the variables are showing continuous distribution except for **Key** variable as it is a discrete variable. </li>
+<li>For **Intrumentalness** and **Popularity** variable is right-skewed(positive) where mode is on the lower end </li>
+</ul>
+
+<h2>Heatmap correlation between features</h2>
+``` {r, cache=TRUE}
+#Set related columns (only numeric)
+relevant_col = c("key","energy","danceability","loudness","speechiness","liveliness","instrumentalness","acoustics","valence","popularity", "tempo","duration_ms")
+
+corr_mat <- round(cor(x=bees[relevant_col], y=bees[relevant_col]),2)
+melt_corr_mat <- melt(corr_mat)
+
+#Plot heatmap
+ggplot(data = melt_corr_mat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()+
+  scale_fill_gradient(low = "#DC1C13",
+                      high = "#00ff00",
+                      guide = "colorbar")+
+  geom_text(aes(Var2, Var1, label = value),
+            color = "white", size = 3)
+
+```
+<h3>**Explanation**</h3>
+<br><p>Based on the correlation heatmap seen above, *GREEN* indicates highest/positive correlation *RED* indicates the lowest/negative relations.
+<ul>
+<li>Highest *positive correlation* is 76% or 0.35 shown between **loudness** and **energy** variable indicates </li>
+<li>The second highest *positive correlation* is 35% or 0.35 shown between **valence(song mood)** and **danceability** *indicates* </li>
+<li>Another strong relationship can be seen between **acoustics** and **energy** which is 60% or 0.60, though it is **negatively correlated** *indicates* with more acoustics the less energising the music becomes.</li>
+<li>Another strong relationship can be seen between **acoustics** and **loudness** which is 56% or 0.56, though it is **negatively correlated** *indicates* higher loudness when there are less acoustics.</li>
+</ul><br>
+
+<br><center>Visualise correlation through graphs</center><br>
+
+```{r,figures-side-correlation, fig.show="hold",out.width="50%" ,cache=TRUE, warning=FALSE, message=FALSE}
+ggplot(bees, aes(x = energy, y = loudness)) +
+  geom_point() +
+  stat_smooth(method = "lm",
+              col = "#C42126",
+              se = FALSE,
+              size = 1)
+
+ggplot(bees, aes(x = acoustics, y = energy)) +
+  geom_point() +
+  stat_smooth(method = "lm",
+              col = "#C42126",
+              se = FALSE,
+              size = 1)
+
+ggplot(bees, aes(x = valence, y = danceability)) +
+  geom_point() +
+  stat_smooth(method = "lm",
+              col = "#C42126",
+              se = FALSE,
+              size = 1)
+
+ggplot(bees, aes(x = acoustics, y = loudness)) +
+  geom_point() +
+  stat_smooth(method = "lm",
+              col = "#C42126",
+              se = FALSE,
+              size = 1)
+
+```
+
+<h3>**Explanation**</h3>
+<ul>
+<li>Graph shows strong positive correlation between loudness and energy with linear distribution.  </li>
+
+<br><h3>Hexplot to show correlation</h3><br>
+```{r,figures-side-hexplot, fig.show="hold",out.width="50%"}
+hexbinplot(energy~loudness,data=bees,colramp=function(n)rev(rainbow(64)))
+hexbinplot(acoustics~energy,data=bees,colramp=function(n)rev(rainbow(64)))
+hexbinplot(danceability~valence,data=bees,colramp=function(n)rev(rainbow(64)))
+hexbinplot(acoustics~loudness,data=bees,colramp=function(n)rev(rainbow(64)))
+```
+
 ### **POPULAR SONGS**
-Fill up here
+```{r,figures-side-barplot, fig.show="hold",out.width="50%"}
+#Popularity by Genre (Barplot)
+genre_pop <- bees %>% group_by(genre_new) %>% summarise(n_popularity=sum(popularity))
+barplot(n_popularity~genre_new,data=genre_pop,main="Top Genre by Popularity",las=2,cex.names=.8,col=c("red","blue","green"))
+
+##No of tracks by Genre
+track<- bees %>% group_by(genre_new) %>% summarise(No_of_tracks = n())
+barplot(No_of_tracks~genre_new,data=track,main="Top Genre by Number of song tracks",las=2,cex.names=.8,col=c("red","blue","green"))
+
+
+##Danceability by Genre
+dance<- bees %>% group_by(genre_new) %>% summarise(danceability = sum(danceability))
+barplot(danceability~genre_new,data=dance, main="Top Genre by Danceability",las=2,cex.names=.8,col=c("red","blue","green"))
+
+#Liveliness by Genre
+live<- bees %>% group_by(genre_new) %>% summarise(liveliness = sum(liveliness))
+barplot(liveliness~genre_new,data=live,las=2,cex.names=.8,col=c("red","blue","green"))
+```
+<h3>**Explanation**</h3>
+<ul>
+<li>**Pop** genre is the most popular genre mainly due to its *number of tracks released*, *danceability* and *liveliness* </li>
+</ul>
+
 
 ## **MACHINE LEARNING** {.tabset}
 
